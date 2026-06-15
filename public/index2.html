@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live PCR Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#111827;
+            color:white;
+            margin:20px;
+        }
+
+        h1{
+            text-align:center;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-bottom:30px;
+        }
+
+        th,td{
+            border:1px solid #444;
+            padding:10px;
+            text-align:center;
+        }
+
+        th{
+            background:#1f2937;
+        }
+
+        tr:nth-child(even){
+            background:#1b2432;
+        }
+
+        .chart-container{
+            width:100%;
+            height:400px;
+            margin-top:30px;
+            background:white;
+            border-radius:8px;
+            padding:10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>📈 LIVE OPTION CHAIN DASHBOARD</h1>
+
+<table id="dashboard">
+    <thead>
+        <tr>
+            <th>Index</th>
+            <th>Spot</th>
+            <th>PCR</th>
+            <th>Change OI PCR</th>
+            <th>VWAP</th>
+        </tr>
+    </thead>
+
+    <tbody></tbody>
+</table>
+
+<div class="chart-container">
+    <canvas id="pcrChart"></canvas>
+</div>
+
+<script>
+
+let labels = [];
+let niftyPCR = [];
+
+const ctx =
+document
+.getElementById("pcrChart")
+.getContext("2d");
+
+const pcrChart =
+new Chart(ctx,{
+
+    type:"line",
+
+    data:{
+
+        labels:labels,
+
+        datasets:[{
+
+            label:"NIFTY PCR",
+
+            data:niftyPCR,
+
+            fill:false
+
+        }]
+
+    },
+
+    options:{
+
+        responsive:true,
+
+        animation:false
+
+    }
+
+});
+
+async function loadDashboard(){
+
+    try{
+
+        // Node backend should serve this JSON
+        // Example:
+        // http://localhost:3000/dashboard.json
+
+        const res =
+        await fetch(
+            "http://localhost:3001/dashboard.json"
+        );
+
+        const data =
+        await res.json();
+
+        const tbody =
+        document.querySelector("#dashboard tbody");
+
+        tbody.innerHTML="";
+
+        data.forEach(row=>{
+
+            tbody.innerHTML +=
+            `
+            <tr>
+
+            <td>${row.Index}</td>
+
+            <td>${Number(row.Spot).toFixed(2)}</td>
+
+            <td>${Number(row.PCR).toFixed(3)}</td>
+
+            <td>${Number(row.Change_OI_PCR).toFixed(3)}</td>
+
+            <td>${Number(row.VWAP).toFixed(2)}</td>
+
+            </tr>
+            `;
+
+        });
+
+        const nifty =
+        data.find(
+            x=>x.Index==="NIFTY"
+        );
+
+        if(nifty){
+
+            labels.push(
+                new Date()
+                .toLocaleTimeString()
+            );
+
+            niftyPCR.push(
+                Number(nifty.PCR)
+            );
+
+            if(labels.length>100){
+
+                labels.shift();
+
+                niftyPCR.shift();
+
+            }
+
+            pcrChart.update();
+
+        }
+
+    }
+
+    catch(err){
+
+        console.log(err);
+
+    }
+
+}
+
+loadDashboard();
+
+setInterval(
+    loadDashboard,
+    30000
+);
+
+</script>
+
+</body>
+</html>
