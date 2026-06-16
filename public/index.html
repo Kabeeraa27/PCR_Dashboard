@@ -155,145 +155,119 @@ td:first-child {
     }
 }
 
-.card::before{
-    content:"";
-    position:absolute;
-    top:0;
-    left:0;
-    width:6px;
-    height:100%;
-    background:#3d8269;
+.card {
+    border-left: 8px solid transparent;
 }
+
+/* NIFTY - Violet */
+.card.NIFTY {
+    border-left-color: #7c3aed;
+}
+
+/* BANKNIFTY - Blue */
+.card.BANKNIFTY {
+    border-left-color: #2563eb;
+}
+
+/* FINNIFTY - Orange */
+.card.FINNIFTY {
+    border-left-color: #d97706;
+}
+
+/* MIDCPNIFTY - Red */
+.card.MIDCPNIFTY {
+    border-left-color: #dc2626;
+}
+
 </style>
 </head>
 <body>
-<h1>📈 Live Option Chain Dashboard</h1>
+<center><h1>📈 Live Option Chain Dashboard</h1></center>
+<br></br>
 <div class="cards" id="cards"></div>
 <table><thead><tr><th>Index</th><th>Spot</th><th>PCR</th><th>Change OI PCR</th><th>VWAP</th></tr></thead><tbody id="tbody"></tbody></table>
-<div class="grid">
-<div class="panel"><canvas id="cN"></canvas></div>
-<div class="panel"><canvas id="cB"></canvas></div>
-<div class="panel"><canvas id="cF"></canvas></div>
-<div class="panel"><canvas id="cM"></canvas></div>
+<div class="panel">
+    <canvas id="combinedChart"></canvas>
 </div>
 <script>
-const hist={}; 
-const charts={};
+
+
 const previousValues = {};
+const labels = [];
 
-function makeChart(id,label){
+const datasets = {
+    NIFTY: [],
+    BANKNIFTY: [],
+    FINNIFTY: [],
+    MIDCPNIFTY: []
+};
 
-    hist[label]={
-        labels:[],
-        data:[]
-    };
+const combinedChart = new Chart(
+    document.getElementById("combinedChart"),
+    {
+        type: "line",
 
-    charts[label]=new Chart(
-
-        document.getElementById(id),
-
-        {
-
-            type:"line",
-
-            data:{
-
-                labels:hist[label].labels,
-
-                datasets:[{
-
-                    label:label+" PCR",
-
-                    data:hist[label].data,
-
-                    borderColor:"#3d8269",
-
-                    backgroundColor:"rgba(61,130,105,0.12)",
-
-                    borderWidth:3,
-
-                    fill:true,
-
-                    tension:0.35,
-
-                    pointRadius:2
-
-                }]
-
-            },
-
-            options:{
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                animation: false,
-
-                interaction: {
-                    mode: "index",
-                    intersect: false
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "NIFTY",
+                    data: datasets.NIFTY,
+                    borderColor: "#7c3aed",
+                    backgroundColor: "transparent",
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: 2,
                 },
-
-                plugins: {
-
-                    title: {
-                        display: true,
-                        text: label + " PCR Trend",
-                        color: "#2d2f33",
-                        font: {
-                            family: "Playfair Display",
-                            size: 18
-                        }
-                    },
-
-                    legend: {
-                        labels: {
-                            font: {
-                                family: "DM Sans"
-                            }
-                        }
-                    }
-
+                {
+                    label: "BANKNIFTY",
+                    data: datasets.BANKNIFTY,
+                    borderColor: "#2563eb",
+                    backgroundColor: "transparent",
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: 2,
                 },
-
-                scales:{
-                    x:{
-                        ticks:{
-                              maxTicksLimit: 8,
-                            font:{
-                                family:"JetBrains Mono"
-                            }
-                        }
-                    },
-                    y:{
-                        min:0.5,
-
-                        max:1.5,
-
-                        ticks:{
-                            stepSize:0.1,
-
-                            font:{
-                                family:"JetBrains Mono"
-                            }
-                        }
-                    }
+                {
+                    label: "FINNIFTY",
+                    data: datasets.FINNIFTY,
+                    borderColor: "#d97706",
+                    backgroundColor: "transparent",
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: 2,
+                },
+                {
+                    label: "MIDCPNIFTY",
+                    data: datasets.MIDCPNIFTY,
+                    borderColor: "#dc2626",
+                    backgroundColor: "transparent",
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: 2,
                 }
+            ]
+        },
 
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+
+            scales: {
+                y: {
+                    min: 0.5,
+                    max: 1.5
+                }
             }
-            
-
         }
+    }
+);
 
-    );
-
-}
-
-makeChart("cN","NIFTY");
-makeChart("cB","BANKNIFTY");
-makeChart("cF","FINNIFTY");
-makeChart("cM","MIDCPNIFTY");
 
 async function load() {
 
@@ -334,7 +308,7 @@ async function load() {
             Number(prev.vwap) !== Number(r.VWAP);
 
         cards.innerHTML += `
-        <div class="card">
+    <div class="card ${r.Index}">
 
             <h3>${r.Index}</h3>
 
@@ -418,29 +392,37 @@ async function load() {
             + ":"
             + roundedMinute.toString().padStart(2, "0");
 
-        if (hist[r.Index] && now <= marketClose) {
+            if (now <= marketClose) {
 
-            if (
-                hist[r.Index].labels.length === 0 ||
-                hist[r.Index].labels[
-                    hist[r.Index].labels.length - 1
-                ] !== timeLabel
-            ) {
-
-                hist[r.Index].labels.push(timeLabel);
-
-                hist[r.Index].data.push(Number(r.PCR));
-
-                if (hist[r.Index].labels.length > 500) {
-                    hist[r.Index].labels.shift();
-                    hist[r.Index].data.shift();
+                if (
+                    labels.length === 0 ||
+                    labels[labels.length - 1] !== timeLabel
+                ) {
+                    labels.push(timeLabel);
                 }
 
+                datasets[r.Index].push(Number(r.PCR));
+
+                // Keep arrays the same length
+                while (datasets[r.Index].length > labels.length) {
+                    datasets[r.Index].shift();
+                }
+
+                if (labels.length > 200) {
+
+                    labels.shift();
+
+                    Object.keys(datasets).forEach(key => {
+                        if (datasets[key].length > 0) {
+                            datasets[key].shift();
+                        }
+                    });
+
+                }
+
+                combinedChart.update();
             }
-            charts[r.Index].update();
 
-
-        }
 
     previousValues[r.Index] = {
     spot: r.Spot,
