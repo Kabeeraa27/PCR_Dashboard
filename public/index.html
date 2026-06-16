@@ -97,6 +97,17 @@ td{
     font-family:'JetBrains Mono',monospace;
 }
 
+th,
+td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+td:first-child {
+    text-align: left;
+}
+
+
 .panel{
     background:white;
     border-radius:22px;
@@ -126,6 +137,24 @@ td{
     overflow:hidden;
 }
 
+.flash-update {
+    background-color: #3d8269;
+    color: #2d2f33 !important;
+    padding: 3px 8px;
+    border-radius: 6px;
+    animation: flashValue 2s ease forwards;
+}
+
+@keyframes flashValue {
+    0%, 80% {
+        background-color: #3d8269;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
 .card::before{
     content:"";
     position:absolute;
@@ -139,7 +168,6 @@ td{
 </head>
 <body>
 <h1>📈 Live Option Chain Dashboard</h1>
-<div class="sub">Refreshes every 30 seconds from /dashboard.json</div>
 <div class="cards" id="cards"></div>
 <table><thead><tr><th>Index</th><th>Spot</th><th>PCR</th><th>Change OI PCR</th><th>VWAP</th></tr></thead><tbody id="tbody"></tbody></table>
 <div class="grid">
@@ -149,7 +177,9 @@ td{
 <div class="panel"><canvas id="cM"></canvas></div>
 </div>
 <script>
-const hist={}; const charts={};
+const hist={}; 
+const charts={};
+const previousValues = {};
 
 function makeChart(id,label){
 
@@ -192,46 +222,39 @@ function makeChart(id,label){
 
             },
 
-            plugins: {
-                title: {
-                    display: true,
-                    text: label + " PCR Trend",
-                    font: {
-                        family: "Playfair Display",
-                        size: 18
-                    },
-                    color: "#2d2f33"
-                },
-                legend: {
-                    labels: {
-                        font: {
-                            family: "DM Sans"
-                        }
-                    }
-                }
-            },
-
             options:{
 
-                responsive:true,
+                responsive: true,
 
-                maintainAspectRatio:false,
+                maintainAspectRatio: false,
 
-                animation:false,
+                animation: false,
 
-                interaction:{
-                    mode:"index",
-                    intersect:false
+                interaction: {
+                    mode: "index",
+                    intersect: false
                 },
 
-                plugins:{
-                    legend:{
-                        labels:{
-                            font:{
-                                family:"DM Sans"
+                plugins: {
+
+                    title: {
+                        display: true,
+                        text: label + " PCR Trend",
+                        color: "#2d2f33",
+                        font: {
+                            family: "Playfair Display",
+                            size: 18
+                        }
+                    },
+
+                    legend: {
+                        labels: {
+                            font: {
+                                family: "DM Sans"
                             }
                         }
                     }
+
                 },
 
                 scales:{
@@ -244,7 +267,13 @@ function makeChart(id,label){
                         }
                     },
                     y:{
+                        min:0.5,
+
+                        max:1.5,
+
                         ticks:{
+                            stepSize:0.1,
+
                             font:{
                                 family:"JetBrains Mono"
                             }
@@ -266,58 +295,161 @@ makeChart("cB","BANKNIFTY");
 makeChart("cF","FINNIFTY");
 makeChart("cM","MIDCPNIFTY");
 
-async function load(){
- const res=await fetch('/dashboard.json');
- const data=await res.json();
- const cards=document.getElementById('cards');
- const tbody=document.getElementById('tbody');
- cards.innerHTML=''; tbody.innerHTML='';
- data.forEach(r=>{
-  cards.innerHTML+=`<div class="card"><h3>${r.Index}</h3>
-  <div class="metric"><span>Spot</span><span>${Number(r.Spot).toFixed(2)}</span></div>
-  <div class="metric"><span>PCR</span><span>${Number(r.PCR).toFixed(3)}</span></div>
-  <div class="metric"><span>Chg PCR</span><span>${Number(r.Change_OI_PCR).toFixed(3)}</span></div>
-  <div class="metric"><span>VWAP</span><span>${Number(r.VWAP).toFixed(2)}</span></div></div>`;
-  tbody.innerHTML+=`<tr><td>${r.Index}</td><td>${Number(r.Spot).toFixed(2)}</td><td>${Number(r.PCR).toFixed(3)}</td><td>${Number(r.Change_OI_PCR).toFixed(3)}</td><td>${Number(r.VWAP).toFixed(2)}</td></tr>`;
+async function load() {
 
-  const now = new Date();
+    const res = await fetch("/dashboard.json");
 
-  const marketClose = new Date();
+    const data = await res.json();
 
-  marketClose.setHours(15, 30, 0, 0);
+    const cards = document.getElementById("cards");
 
-  const timeLabel = now.toLocaleTimeString(
-      "en-IN",
-      {
-          hour: "2-digit",
-          minute: "2-digit"
-      }
-  );
+    const tbody = document.getElementById("tbody");
 
-  if (hist[r.Index] && now <= marketClose) {
+    cards.innerHTML = "";
 
-      // Prevent duplicate points for the same minute
-      if (
-          hist[r.Index].labels.length === 0 ||
-          hist[r.Index].labels[
-              hist[r.Index].labels.length - 1
-          ] !== timeLabel
-      ) {
+    tbody.innerHTML = "";
 
-          hist[r.Index].labels.push(timeLabel);
+    data.forEach(r => {
 
-          if (hist[r.Index].labels.length > 500) {
-              hist[r.Index].labels.shift();
-              hist[r.Index].data.shift();
-          }
+        // ===========================
+        // Cards
+        // ===========================
 
-      }
+        const prev = previousValues[r.Index] || {};
 
-      charts[r.Index].update();
+        const spotChanged =
+            prev.spot !== undefined &&
+            Number(prev.spot) !== Number(r.Spot);
 
-  }
+        const pcrChanged =
+            prev.pcr !== undefined &&
+            Number(prev.pcr) !== Number(r.PCR);
 
- });
+        const chgChanged =
+            prev.change !== undefined &&
+            Number(prev.change) !== Number(r.Change_OI_PCR);
+
+        const vwapChanged =
+            prev.vwap !== undefined &&
+            Number(prev.vwap) !== Number(r.VWAP);
+
+        cards.innerHTML += `
+        <div class="card">
+
+            <h3>${r.Index}</h3>
+
+            <div class="metric">
+                <span>Spot</span>
+                <span class="${spotChanged ? "flash-update" : ""}">
+                    ${Number(r.Spot).toFixed(2)}
+                </span>
+            </div>
+
+            <div class="metric">
+                <span>PCR</span>
+                <span class="${pcrChanged ? "flash-update" : ""}">
+                    ${Number(r.PCR).toFixed(3)}
+                </span>
+            </div>
+
+            <div class="metric">
+                <span>Chg PCR</span>
+                <span class="${chgChanged ? "flash-update" : ""}">
+                    ${Number(r.Change_OI_PCR).toFixed(3)}
+                </span>
+            </div>
+
+            <div class="metric">
+                <span>VWAP</span>
+                <span class="${vwapChanged ? "flash-update" : ""}">
+                    ${Number(r.VWAP).toFixed(2)}
+                </span>
+            </div>
+
+        </div>
+        `;
+
+
+        // ===========================
+        // Table
+        // ===========================
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${r.Index}</td>
+            <td>
+                <span class="${spotChanged ? "flash-update" : ""}">
+                    ${Number(r.Spot).toFixed(2)}
+                </span>
+            </td>
+            <td>
+                <span class="${pcrChanged ? "flash-update" : ""}">
+                    ${Number(r.PCR).toFixed(3)}
+                </span>
+            </td>
+            <td>
+                <span class="${chgChanged ? "flash-update" : ""}">
+                    ${Number(r.Change_OI_PCR).toFixed(3)}
+                </span>
+            </td>
+            <td>
+                <span class="${vwapChanged ? "flash-update" : ""}">
+                    ${Number(r.VWAP).toFixed(2)}
+                </span>
+            </td>
+        </tr>
+        `;
+
+        // ===========================
+        // Chart update
+        // ===========================
+
+        const now = new Date();
+
+        const marketClose = new Date();
+
+        marketClose.setHours(15, 30, 0, 0);
+
+        const roundedMinute =
+            Math.floor(now.getMinutes() / 2) * 2;
+
+        const timeLabel =
+            now.getHours().toString().padStart(2, "0")
+            + ":"
+            + roundedMinute.toString().padStart(2, "0");
+
+        if (hist[r.Index] && now <= marketClose) {
+
+            if (
+                hist[r.Index].labels.length === 0 ||
+                hist[r.Index].labels[
+                    hist[r.Index].labels.length - 1
+                ] !== timeLabel
+            ) {
+
+                hist[r.Index].labels.push(timeLabel);
+
+                hist[r.Index].data.push(Number(r.PCR));
+
+                if (hist[r.Index].labels.length > 500) {
+                    hist[r.Index].labels.shift();
+                    hist[r.Index].data.shift();
+                }
+
+            }
+            charts[r.Index].update();
+
+
+        }
+
+    previousValues[r.Index] = {
+    spot: r.Spot,
+    pcr: r.PCR,
+    change: r.Change_OI_PCR,
+    vwap: r.VWAP
+};
+
+    });
 }
 load();
 setInterval(load,30000);
