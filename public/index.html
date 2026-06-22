@@ -179,6 +179,35 @@ td:first-child {
     border-left-color: #dc2626;
 }
 
+.legend-buttons {
+    display: flex;
+    justify-content: center;   /* <-- centers buttons */
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 auto 20px auto;
+}
+
+.legend-buttons button {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    transition: 0.2s ease;
+}
+
+.legend-buttons button:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.legend-buttons button.disabled {
+    opacity: 0.35;
+    text-decoration: line-through;
+}
+
 </style>
 </head>
 
@@ -187,17 +216,29 @@ td:first-child {
 <br></br>
 <div class="cards" id="cards"></div>
 <table><thead><tr><th>Index</th><th>Spot</th><th>PCR</th><th>Change OI PCR</th><th>VWAP</th></tr></thead><tbody id="tbody"></tbody></table>
-
-<div class="panel">
-    <canvas id="pcrChart"></canvas>
-</div>
-
 <br>
 
 <div class="panel">
-    <canvas id="spotChart"></canvas>
+    <div id="pcrLegend" class="legend-buttons">
+        <button style="background:#7c3aed" onclick="toggleDataset(pcrChart,0,this)">NIFTY</button>
+        <button style="background:#2563eb" onclick="toggleDataset(pcrChart,1,this)">BANKNIFTY</button>
+        <button style="background:#d97706" onclick="toggleDataset(pcrChart,2,this)">FINNIFTY</button>
+        <button style="background:#dc2626" onclick="toggleDataset(pcrChart,3,this)">MIDCPNIFTY</button>
+    </div>
+
+    <canvas id="pcrChart"></canvas>
 </div>
 
+<div class="panel">
+    <div id="spotLegend" class="legend-buttons">
+        <button style="background:#7c3aed" onclick="toggleDataset(spotChart,0,this)">NIFTY</button>
+        <button style="background:#2563eb" onclick="toggleDataset(spotChart,1,this)">BANKNIFTY</button>
+        <button style="background:#d97706" onclick="toggleDataset(spotChart,2,this)">FINNIFTY</button>
+        <button style="background:#dc2626" onclick="toggleDataset(spotChart,3,this)">MIDCPNIFTY</button>
+    </div>
+
+    <canvas id="spotChart"></canvas>
+</div>
 
 <script>
 
@@ -248,6 +289,8 @@ const spotDatasets = {
     FINNIFTY: savedSpot.FINNIFTY || new Array(labels.length).fill(null),
     MIDCPNIFTY: savedSpot.MIDCPNIFTY || new Array(labels.length).fill(null)
 };
+
+
 
 
 const pcrChart = new Chart(document.getElementById("pcrChart"), {
@@ -320,7 +363,7 @@ const pcrChart = new Chart(document.getElementById("pcrChart"), {
             },
 
             legend: {
-                position: "top"
+                display: false
             },
 
             tooltip: {
@@ -330,45 +373,68 @@ const pcrChart = new Chart(document.getElementById("pcrChart"), {
             }
         },
 
-        scales: {
-            x: {
-                grid: {
-                    display: false
-                },
-                ticks: {
-                    autoSkip: false,
-                    maxRotation: 0,
-                    minRotation: 0,
-                    font: {
-                        family: "JetBrains Mono"
-                    },
-                callback: function(value, index) {
+scales: {
+    x: {
+        grid: {
+            display: false
+        },
 
-                    // Show every 30 minutes
-                    if (index % 30 === 0) {
-                        return this.getLabelForValue(value);
-                    }
+        // Keep the X-axis line
+        border: {
+            display: true,
+            color: "#999",
+            width: 1
+        },
 
-                    // Always show the last timestamp (15:30)
-                    if (index === labels.length - 1) {
-                        return this.getLabelForValue(value);
-                    }
-
-                    return "";
-                    }
-                }
+        ticks: {
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0,
+            font: {
+                family: "JetBrains Mono"
             },
+            callback: function(value, index) {
 
-            y: {
-                min: 0.5,
-                max: 1.5,
-                grid: {
-                    display: false
+                // 09:15, 10:15, ..., 15:15
+                if (index % 60 === 0) {
+                    return this.getLabelForValue(value);
                 }
+
+                // Always show 15:30
+                if (index === labels.length - 1) {
+                    return this.getLabelForValue(value);
+                }
+
+                return "";
             }
         }
+    },
+
+y: {
+    beginAtZero: false,
+
+    grace: "5%",
+
+    grid: {
+        display: false
+    },
+
+    border: {
+        display: true,
+        color: "#999",
+        width: 1
+    },
+
+    ticks: {
+        callback: function(value) {
+            return Number(value).toLocaleString("en-IN");
+        }
+    }
+}
+}
     }
 });
+
 
 const spotChart = new Chart(document.getElementById("spotChart"), {
     type: "line",
@@ -436,7 +502,7 @@ const spotChart = new Chart(document.getElementById("spotChart"), {
             },
 
             legend: {
-                position: "top"
+                display: false
             },
 
             tooltip: {
@@ -446,51 +512,84 @@ const spotChart = new Chart(document.getElementById("spotChart"), {
             }
         },
 
-        scales: {
-            x: {
-                grid: {
-                    display: false
-                },
-                ticks: {
-                    autoSkip: false,
-                    maxRotation: 0,
-                    minRotation: 0,
-                    font: {
-                        family: "JetBrains Mono"
-                    },
-                   callback: function(value, index) {
+scales: {
+    x: {
+        grid: {
+            display: false
+        },
 
-                    // Show every 30 minutes
-                    if (index % 30 === 0) {
-                        return this.getLabelForValue(value);
-                    }
+        // Keep the X-axis line
+        border: {
+            display: true,
+            color: "#999",
+            width: 1
+        },
 
-                    // Always show the last timestamp (15:30)
-                    if (index === labels.length - 1) {
-                        return this.getLabelForValue(value);
-                    }
-
-                    return "";
-                    }
-                }
+        ticks: {
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0,
+            font: {
+                family: "JetBrains Mono"
             },
+            callback: function(value, index) {
 
-            y: {
-                grid: {
-                    display: false
-                },
-                ticks: {
-                    font: {
-                        family: "JetBrains Mono"
-                    },
-                    callback(value) {
-                        return Number(value).toLocaleString("en-IN");
-                    }
+                // 09:15, 10:15, ..., 15:15
+                if (index % 60 === 0) {
+                    return this.getLabelForValue(value);
                 }
+
+                // Always show 15:30
+                if (index === labels.length - 1) {
+                    return this.getLabelForValue(value);
+                }
+
+                return "";
             }
         }
+    },
+
+y: {
+    beginAtZero: false,
+
+    grace: "5%",
+
+    grid: {
+        display: false
+    },
+
+    border: {
+        display: true,
+        color: "#999",
+        width: 1
+    },
+
+    ticks: {
+        callback: function(value) {
+            return Number(value).toLocaleString("en-IN");
+        }
     }
+}
+}
+    }
+
+
 });
+
+
+function toggleDataset(chart, index, button) {
+    const visible = chart.isDatasetVisible(index);
+
+    chart.setDatasetVisibility(index, !visible);
+
+    if (visible) {
+        button.classList.add("disabled");
+    } else {
+        button.classList.remove("disabled");
+    }
+
+    chart.update();
+}
 
 
 async function load() {
