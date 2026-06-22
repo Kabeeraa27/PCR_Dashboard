@@ -250,226 +250,214 @@ const spotDatasets = {
 };
 
 
-const pcrChart = new Chart(
-    document.getElementById("pcrChart"),
-    {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: "NIFTY",
-                    data: datasets.NIFTY,
-                    borderColor: "#7c3aed",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: "BANKNIFTY",
-                    data: datasets.BANKNIFTY,
-                    borderColor: "#2563eb",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: "FINNIFTY",
-                    data: datasets.FINNIFTY,
-                    borderColor: "#d97706",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: "MIDCPNIFTY",
-                    data: datasets.MIDCPNIFTY,
-                    borderColor: "#dc2626",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                }
-            ]
+const pcrChart = new Chart(document.getElementById("pcrChart"), {
+    type: "line",
+
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: "NIFTY",
+                data: datasets.NIFTY,
+                borderColor: "#7c3aed",
+                borderWidth: 2.5,
+                spanGaps: false,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },
+            {
+                label: "BANKNIFTY",
+                data: datasets.BANKNIFTY,
+                borderColor: "#2563eb",
+                borderWidth: 2.5,
+                spanGaps: false,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },
+            {
+                label: "FINNIFTY",
+                data: datasets.FINNIFTY,
+                borderColor: "#d97706",
+                borderWidth: 2.5,
+                spanGaps: false,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },
+            {
+                label: "MIDCPNIFTY",
+                data: datasets.MIDCPNIFTY,
+                borderColor: "#dc2626",
+                borderWidth: 2.5,
+                spanGaps: false,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            }
+        ]
+    },
+
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+
+        interaction: {
+            mode: "index",
+            intersect: false
         },
-        elements: {
-                line: {
-                    borderWidth: 2.5
+
+        plugins: {
+            title: {
+                display: true,
+                text: "📈 Live Put-Call Ratio (PCR) Trend",
+                font: {
+                    size: 20,
+                    weight: "bold"
                 },
-                point: {
-                    radius: 0,
-                    hoverRadius: 5
+                padding: {
+                    top: 10,
+                    bottom: 20
                 }
             },
-            plugins: {
-                legend: {
-                    position: "bottom"
-                },
-                tooltip: {
-                    mode: "index",
-                    intersect: false
-                }
+
+            legend: {
+                position: "top"
             },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
+
+            tooltip: {
+                enabled: true,
                 mode: "index",
                 intersect: false
-            },
-            plugins: {
-                tooltip: {
-                    enabled: true
+            }
+        },
+
+        scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 0,
+                    minRotation: 0,
+                    font: {
+                        family: "JetBrains Mono"
+                    },
+                    callback(value, index) {
+                        return index % 30 === 0
+                            ? this.getLabelForValue(value)
+                            : "";
+                    }
                 }
             },
-            animation: false,
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        autoSkip: false,
 
-                        callback: function(value, index) {
-
-                            // Show only every 30th point
-                            // 2-minute interval -> 30 points = 60 minutes
-
-                            if (index % 30 === 0) {
-                                return this.getLabelForValue(value);
-                            }
-
-                            return "";
-                        },
-
-                        maxRotation: 0,
-                        minRotation: 0,
-
-                        font: {
-                            family: "JetBrains Mono"
-                        }
-                    }
-                },
-                y: {
-                    min: 0.5,
-                    max: 1.5,
-                    grid: {display: false
-                        }
-                    }
+            y: {
+                min: 0.5,
+                max: 1.5,
+                grid: {
+                    display: false
                 }
             }
         }
-);
+    }
+});
 
-const spotChart = new Chart(
-    document.getElementById("spotChart"),
-    {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: "NIFTY",
-                    data: spotDatasets.NIFTY,
-                    borderColor: "#7c3aed",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: "BANKNIFTY",
-                    data: spotDatasets.BANKNIFTY,
-                    borderColor: "#2563eb",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: "FINNIFTY",
-                    data: spotDatasets.FINNIFTY,
-                    borderColor: "#d97706",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: "MIDCPNIFTY",
-                    data: spotDatasets.MIDCPNIFTY,
-                    borderColor: "#dc2626",
-                    spanGaps: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverRadius: 6,
-                }
-            ]
+const spotChart = new Chart(document.getElementById("spotChart"), {
+    type: "line",
+
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: "NIFTY",
+                data: spotDatasets.NIFTY,
+                borderColor: "#7c3aed",
+                borderWidth: 2.5,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },
+            {
+                label: "BANKNIFTY",
+                data: spotDatasets.BANKNIFTY,
+                borderColor: "#2563eb",
+                borderWidth: 2.5,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },
+            {
+                label: "FINNIFTY",
+                data: spotDatasets.FINNIFTY,
+                borderColor: "#d97706",
+                borderWidth: 2.5,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },
+            {
+                label: "MIDCPNIFTY",
+                data: spotDatasets.MIDCPNIFTY,
+                borderColor: "#dc2626",
+                borderWidth: 2.5,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            }
+        ]
+    },
+
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+
+        interaction: {
+            mode: "index",
+            intersect: false
         },
-        elements: {
-                line: {
-                    borderWidth: 2.5
+
+        plugins: {
+            title: {
+                display: true,
+                text: "💹 Live Underlying Spot Price Trend",
+                font: {
+                    size: 20,
+                    weight: "bold"
                 },
-                point: {
-                    radius: 0,
-                    hoverRadius: 5
+                padding: {
+                    top: 10,
+                    bottom: 20
                 }
             },
-            plugins: {
-                legend: {
-                    position: "bottom"
-                },
-                tooltip: {
-                    mode: "index",
-                    intersect: false
-                }
+
+            legend: {
+                position: "top"
             },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
+
+            tooltip: {
+                enabled: true,
                 mode: "index",
                 intersect: false
-            },
-            plugins: {
-                tooltip: {
-                    enabled: true
+            }
+        },
+
+        scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 0,
+                    minRotation: 0,
+                    font: {
+                        family: "JetBrains Mono"
+                    },
+                    callback(value, index) {
+                        return index % 30 === 0
+                            ? this.getLabelForValue(value)
+                            : "";
+                    }
                 }
             },
-            animation: false,
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        autoSkip: false,
 
-                        callback: function(value, index) {
-
-                            // Show only every 30th point
-                            // 2-minute interval -> 30 points = 60 minutes
-
-                            if (index % 30 === 0) {
-                                return this.getLabelForValue(value);
-                            }
-
-                            return "";
-                        },
-
-                        maxRotation: 0,
-                        minRotation: 0,
-
-                        font: {
-                            family: "JetBrains Mono"
-                        }
-                    }
-                },
-                y: {
+            y: {
                 grid: {
                     display: false
                 },
@@ -477,15 +465,15 @@ const spotChart = new Chart(
                     font: {
                         family: "JetBrains Mono"
                     },
-                    callback: function(value) {
+                    callback(value) {
                         return Number(value).toLocaleString("en-IN");
                     }
                 }
             }
-            }
         }
     }
-);
+});
+
 
 async function load() {
 
