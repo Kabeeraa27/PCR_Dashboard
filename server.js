@@ -22,6 +22,33 @@ const INDICES = [
   "MIDCPNIFTY"
 ];
 
+
+const HISTORY_FILE = "history.json";
+
+let history = {
+    date: "",
+    labels: [],
+    pcr: {
+        NIFTY: [],
+        BANKNIFTY: [],
+        FINNIFTY: [],
+        MIDCPNIFTY: []
+    },
+    spot: {
+        NIFTY: [],
+        BANKNIFTY: [],
+        FINNIFTY: [],
+        MIDCPNIFTY: []
+    }
+};
+
+if (fs.existsSync(HISTORY_FILE)) {
+    history = JSON.parse(
+        fs.readFileSync(HISTORY_FILE, "utf8")
+    );
+}
+
+
 // ===============================
 // Fetch Metrics
 // ===============================
@@ -249,26 +276,108 @@ async function dashboard() {
 
   try {
 
-    const results =
-      await Promise.all(
-        INDICES.map(getMetrics)
-      );
-
-
-      
+    const results = await Promise.all(
+      INDICES.map(getMetrics)
+    );
 
     latestResults = results.map(r => ({
-    Index: r.symbol,
-    Spot: r.spot,
-    PCR: r.pcr,
-    Change_OI_PCR: r.changeOIPCR,
-    VWAP: r.vwap,
-    CE_OI: r.ceOI,
-    PE_OI: r.peOI,
-    Updated: r.timestamp
-  }));
+      Index: r.symbol,
+      Spot: r.spot,
+      PCR: r.pcr,
+      Change_OI_PCR: r.changeOIPCR,
+      VWAP: r.vwap,
+      CE_OI: r.ceOI,
+      PE_OI: r.peOI,
+      Updated: r.timestamp
+    }));
 
-    console.log(latestResults);
+    // =====================================
+    // Update history.json (once per minute)
+    // =====================================
+
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+
+    if (history.date !== today) {
+    history = {
+        date: today,
+        labels: [],
+        pcr: {
+            NIFTY: [],
+            BANKNIFTY: [],
+            FINNIFTY: [],
+            MIDCPNIFTY: []
+        },
+        spot: {
+            NIFTY: [],
+            BANKNIFTY: [],
+            FINNIFTY: [],
+            MIDCPNIFTY: []
+        }
+    };
+}
+
+fs.writeFileSync(
+    HISTORY_FILE,
+    JSON.stringify(history, null, 2)
+);
+
+    const label = now.getHours().toString().padStart(2, "0") +
+        ":" +
+        now.getMinutes().toString().padStart(2, "0");
+
+    const isNewMinute =
+        history.labels.length === 0 ||
+        history.labels[history.labels.length - 1] !== label;
+
+    // Market timings: 09:15 AM to 03:30 PM
+    const totalMinutes =
+        now.getHours() * 60 + now.getMinutes();
+
+    const marketOpen = 9 * 60 + 15;   // 09:15
+    const marketClose = 15 * 60 + 30; // 15:30
+
+    if (
+        isNewMinute &&
+        totalMinutes >= marketOpen &&
+        totalMinutes <= marketClose
+    ) {
+
+        history.labels.push(label);
+
+        for (const r of results) {
+            history.pcr[r.symbol].push(Number(r.pcr));
+            history.spot[r.symbol].push(Number(r.spot));
+        }
+
+        const MAX_POINTS = 376;
+
+        if (history.labels.length > MAX_POINTS) {
+            history.labels.shift();
+        }
+
+        for (const idx of INDICES) {
+            if (history.pcr[idx].length > MAX_POINTS) {
+                history.pcr[idx].shift();
+            }
+
+            if (history.spot[idx].length > MAX_POINTS) {
+                history.spot[idx].shift();
+            }
+        }
+
+        history.date = today;
+
+        fs.writeFileSync(
+            HISTORY_FILE,
+            JSON.stringify(history, null, 2)
+        );
+    }
+
+    // =====================================
+    // Console Output
+    // =====================================
+
     console.clear();
 
     console.log(
@@ -293,27 +402,25 @@ async function dashboard() {
 
         Index: r.symbol,
 
-        Spot:
-          Number(r.spot).toFixed(2),
+        Spot: Number(r.spot).toFixed(2),
 
-        PCR:
-          r.pcr.toFixed(3),
+        PCR: r.pcr.toFixed(3),
 
-        Change_OI_PCR:
-          r.changeOIPCR.toFixed(3),
+        Change_OI_PCR: r.changeOIPCR.toFixed(3),
 
-        VWAP:
-          r.vwap.toFixed(2),
+        VWAP: r.vwap.toFixed(2),
 
-        CE_OI:
-          r.ceOI,
+        CE_OI: r.ceOI,
 
-        PE_OI:
-          r.peOI
+        PE_OI: r.peOI
 
       }))
 
     );
+
+    // =====================================
+    // Save Excel
+    // =====================================
 
     await saveExcel(results);
 
@@ -327,6 +434,8 @@ async function dashboard() {
 
 }
 
+
+
 // ===============================
 // Run every 30 sec
 // ===============================
@@ -334,11 +443,15 @@ async function dashboard() {
 const PORT = 3001;
 
 app.get("/dashboard.json", (req, res) => {
-  res.json(latestResults);
+    res.json(latestResults);
+});
+
+app.get("/history.json", (req, res) => {
+    res.json(history);
 });
 
 app.listen(PORT, () => {
-  console.log(`Dashboard available at http://localhost:${PORT}`);
+    console.log(`Dashboard available at http://localhost:${PORT}`);
 });
 
 // Initial fetch

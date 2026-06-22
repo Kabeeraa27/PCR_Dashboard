@@ -181,32 +181,79 @@ td:first-child {
 
 </style>
 </head>
+
 <body>
 <center><h1>📈 Live Option Chain Dashboard</h1></center>
 <br></br>
 <div class="cards" id="cards"></div>
 <table><thead><tr><th>Index</th><th>Spot</th><th>PCR</th><th>Change OI PCR</th><th>VWAP</th></tr></thead><tbody id="tbody"></tbody></table>
+
 <div class="panel">
-    <canvas id="combinedChart"></canvas>
+    <canvas id="pcrChart"></canvas>
 </div>
+
+<br>
+
+<div class="panel">
+    <canvas id="spotChart"></canvas>
+</div>
+
+
 <script>
 
-
+// Restore previous chart data if available
+const savedPCR = {};
+const savedSpot = {};
 const previousValues = {};
 const labels = [];
+let historyLoaded = false;
+
+function generateTimeline() {
+
+    let current = new Date();
+    current.setHours(9, 15, 0, 0);
+
+    const end = new Date();
+    end.setHours(15, 30, 0, 0);
+
+    while (current <= end) {
+
+        labels.push(
+            current.toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            })
+        );
+
+        // 1-minute interval
+        current.setMinutes(current.getMinutes() + 1);
+    }
+}
+
+
+generateTimeline();
+
 
 const datasets = {
-    NIFTY: [],
-    BANKNIFTY: [],
-    FINNIFTY: [],
-    MIDCPNIFTY: []
+    NIFTY: savedPCR.NIFTY || new Array(labels.length).fill(null),
+    BANKNIFTY: savedPCR.BANKNIFTY || new Array(labels.length).fill(null),
+    FINNIFTY: savedPCR.FINNIFTY || new Array(labels.length).fill(null),
+    MIDCPNIFTY: savedPCR.MIDCPNIFTY || new Array(labels.length).fill(null)
 };
 
-const combinedChart = new Chart(
-    document.getElementById("combinedChart"),
+const spotDatasets = {
+    NIFTY: savedSpot.NIFTY || new Array(labels.length).fill(null),
+    BANKNIFTY: savedSpot.BANKNIFTY || new Array(labels.length).fill(null),
+    FINNIFTY: savedSpot.FINNIFTY || new Array(labels.length).fill(null),
+    MIDCPNIFTY: savedSpot.MIDCPNIFTY || new Array(labels.length).fill(null)
+};
+
+
+const pcrChart = new Chart(
+    document.getElementById("pcrChart"),
     {
         type: "line",
-
         data: {
             labels: labels,
             datasets: [
@@ -214,73 +261,277 @@ const combinedChart = new Chart(
                     label: "NIFTY",
                     data: datasets.NIFTY,
                     borderColor: "#7c3aed",
-                    backgroundColor: "transparent",
-                    borderWidth: 3,
-                    tension: 0.35,
-                    fill: false,
-                    pointRadius: 2,
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
                 },
                 {
                     label: "BANKNIFTY",
                     data: datasets.BANKNIFTY,
                     borderColor: "#2563eb",
-                    backgroundColor: "transparent",
-                    borderWidth: 3,
-                    tension: 0.35,
-                    fill: false,
-                    pointRadius: 2,
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
                 },
                 {
                     label: "FINNIFTY",
                     data: datasets.FINNIFTY,
                     borderColor: "#d97706",
-                    backgroundColor: "transparent",
-                    borderWidth: 3,
-                    tension: 0.35,
-                    fill: false,
-                    pointRadius: 2,
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
                 },
                 {
                     label: "MIDCPNIFTY",
                     data: datasets.MIDCPNIFTY,
                     borderColor: "#dc2626",
-                    backgroundColor: "transparent",
-                    borderWidth: 3,
-                    tension: 0.35,
-                    fill: false,
-                    pointRadius: 2,
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
                 }
             ]
         },
-
+        elements: {
+                line: {
+                    borderWidth: 2.5
+                },
+                point: {
+                    radius: 0,
+                    hoverRadius: 5
+                }
+            },
+            plugins: {
+                legend: {
+                    position: "bottom"
+                },
+                tooltip: {
+                    mode: "index",
+                    intersect: false
+                }
+            },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                tooltip: {
+                    enabled: true
+                }
+            },
             animation: false,
-
             scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        autoSkip: false,
+
+                        callback: function(value, index) {
+
+                            // Show only every 30th point
+                            // 2-minute interval -> 30 points = 60 minutes
+
+                            if (index % 30 === 0) {
+                                return this.getLabelForValue(value);
+                            }
+
+                            return "";
+                        },
+
+                        maxRotation: 0,
+                        minRotation: 0,
+
+                        font: {
+                            family: "JetBrains Mono"
+                        }
+                    }
+                },
                 y: {
                     min: 0.5,
-                    max: 1.5
+                    max: 1.5,
+                    grid: {display: false
+                        }
+                    }
                 }
+            }
+        }
+);
+
+const spotChart = new Chart(
+    document.getElementById("spotChart"),
+    {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "NIFTY",
+                    data: spotDatasets.NIFTY,
+                    borderColor: "#7c3aed",
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
+                },
+                {
+                    label: "BANKNIFTY",
+                    data: spotDatasets.BANKNIFTY,
+                    borderColor: "#2563eb",
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
+                },
+                {
+                    label: "FINNIFTY",
+                    data: spotDatasets.FINNIFTY,
+                    borderColor: "#d97706",
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
+                },
+                {
+                    label: "MIDCPNIFTY",
+                    data: spotDatasets.MIDCPNIFTY,
+                    borderColor: "#dc2626",
+                    spanGaps: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverRadius: 6,
+                }
+            ]
+        },
+        elements: {
+                line: {
+                    borderWidth: 2.5
+                },
+                point: {
+                    radius: 0,
+                    hoverRadius: 5
+                }
+            },
+            plugins: {
+                legend: {
+                    position: "bottom"
+                },
+                tooltip: {
+                    mode: "index",
+                    intersect: false
+                }
+            },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                tooltip: {
+                    enabled: true
+                }
+            },
+            animation: false,
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        autoSkip: false,
+
+                        callback: function(value, index) {
+
+                            // Show only every 30th point
+                            // 2-minute interval -> 30 points = 60 minutes
+
+                            if (index % 30 === 0) {
+                                return this.getLabelForValue(value);
+                            }
+
+                            return "";
+                        },
+
+                        maxRotation: 0,
+                        minRotation: 0,
+
+                        font: {
+                            family: "JetBrains Mono"
+                        }
+                    }
+                },
+                y: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: {
+                        family: "JetBrains Mono"
+                    },
+                    callback: function(value) {
+                        return Number(value).toLocaleString("en-IN");
+                    }
+                }
+            }
             }
         }
     }
 );
 
-
 async function load() {
 
     const res = await fetch("/dashboard.json");
-
     const data = await res.json();
-
     const cards = document.getElementById("cards");
-
     const tbody = document.getElementById("tbody");
+        
+    if (!historyLoaded) {
+
+        const historyRes = await fetch("/history.json");
+        const history = await historyRes.json();
+
+        const indexList = [
+            "NIFTY",
+            "BANKNIFTY",
+            "FINNIFTY",
+            "MIDCPNIFTY"
+        ];
+
+        history.labels.forEach((label, idx) => {
+
+            const pos = labels.indexOf(label);
+
+            if (pos !== -1) {
+
+                indexList.forEach(symbol => {
+
+                    datasets[symbol][pos] =
+                        history.pcr[symbol]?.[idx] ?? null;
+
+                    spotDatasets[symbol][pos] =
+                        history.spot[symbol]?.[idx] ?? null;
+
+                });
+
+            }
+
+        });
+
+        historyLoaded = true;
+
+    }
+
 
     cards.innerHTML = "";
-
     tbody.innerHTML = "";
 
     data.forEach(r => {
@@ -384,54 +635,37 @@ async function load() {
 
         marketClose.setHours(15, 30, 0, 0);
 
-        const roundedMinute =
-            Math.floor(now.getMinutes() / 2) * 2;
-
         const timeLabel =
-            now.getHours().toString().padStart(2, "0")
-            + ":"
-            + roundedMinute.toString().padStart(2, "0");
+            now.toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            });
+        const totalMinutes = now.getHours() * 60 + now.getMinutes();
 
-            if (now <= marketClose) {
+        if (totalMinutes >= 9 * 60 + 15 && totalMinutes <= 15 * 60 + 30) {
+            const idx = labels.indexOf(timeLabel);
 
-                if (
-                    labels.length === 0 ||
-                    labels[labels.length - 1] !== timeLabel
-                ) {
-                    labels.push(timeLabel);
-                }
-
-                datasets[r.Index].push(Number(r.PCR));
-
-                // Keep arrays the same length
-                while (datasets[r.Index].length > labels.length) {
-                    datasets[r.Index].shift();
-                }
-
-                if (labels.length > 200) {
-
-                    labels.shift();
-
-                    Object.keys(datasets).forEach(key => {
-                        if (datasets[key].length > 0) {
-                            datasets[key].shift();
-                        }
-                    });
-
-                }
-
-                combinedChart.update();
+            if (idx !== -1) {
+                datasets[r.Index][idx] = Number(r.PCR);
+                spotDatasets[r.Index][idx] = Number(r.Spot);
             }
-
+        }
 
     previousValues[r.Index] = {
     spot: r.Spot,
     pcr: r.PCR,
     change: r.Change_OI_PCR,
     vwap: r.VWAP
+
+    
 };
 
     });
+
+    pcrChart.update();
+    spotChart.update();
+
 }
 load();
 setInterval(load,30000);
