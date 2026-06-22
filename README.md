@@ -1,57 +1,69 @@
-# PCR Dashboard
+# 📈 PCR Dashboard
 
-A real-time **Options PCR Dashboard** built using **Node.js**, **Express**, and **stock-nse-india**. The application fetches live option chain data from NSE, computes key technical metrics, and displays them in a modern web dashboard.
-
-## Features
-
-* 📈 Live **Put-Call Ratio (PCR)**
-* 📊 **Change OI PCR** (`Put Change OI / Call Change OI`)
-* 💹 **VWAP** (Volume Weighted Average Price)
-* 🎯 Live Spot Price
-* 📋 Dashboard for:
-
-  * NIFTY
-  * BANKNIFTY
-  * FINNIFTY
-  * MIDCPNIFTY
-* 📉 Interactive charts with automatic refresh
-* 📑 Automatic Excel logging (`PCR_Live.xlsx`)
-* 🔄 Refreshes every 30 seconds
+A modern **Real-Time Options Analytics Dashboard** built using **Node.js**, **Express**, **Chart.js**, and **stock-nse-india**. The application fetches live NSE option chain data, computes key derivatives metrics, stores historical intraday values, and presents them through an interactive web dashboard with auto-refreshing visualizations.
 
 ---
 
-## Project Structure
+# ✨ Features
 
-```
+* 📈 Live **Put-Call Ratio (PCR)** for major NSE indices
+* 📊 **Change OI PCR** (`Put Change in OI / Call Change in OI`)
+* 💹 **VWAP** (Volume Weighted Average Price)
+* 🎯 Live **Underlying Spot Price**
+* ⚡ Automatic refresh every **30 seconds**
+* 📉 Interactive **PCR Trend Chart** for all indices
+* 📊 Interactive **Spot Price Trend Chart** for all indices
+* 🕘 Fixed market timeline from **09:15 AM – 03:30 PM**
+* 🔄 Historical chart persistence using `history.json`
+* 💾 Automatic Excel logging (`PCR_Live.xlsx`)
+* 🟢 Dynamic value highlighting whenever metrics change
+* 📋 Responsive dashboard cards and summary table
+
+---
+
+# 📊 Supported Indices
+
+* NIFTY
+* BANKNIFTY
+* FINNIFTY
+* MIDCPNIFTY
+
+---
+
+# 📁 Project Structure
+
+```text
 PCR_Dashboard/
 │
 ├── server.js
 ├── package.json
+├── package-lock.json
+├── history.json
 ├── PCR_Live.xlsx
-├── public/
-│   └── index.html
-└── start_document.bat
+├── start.bat
+├── node_modules/
+│
+└── public/
+    └── index.html
 ```
 
 ---
 
-## Prerequisites
+# 🛠️ Technologies Used
 
-Install the following before running the project:
-
-* Node.js (v18 or later recommended)
-* npm (bundled with Node.js)
-
-Verify installation:
-
-```bash
-node -v
-npm -v
-```
+* Node.js
+* Express.js
+* Chart.js
+* stock-nse-india
+* ExcelJS
+* CORS
+* HTML5
+* CSS3
+* Vanilla JavaScript
 
 ---
 
-## Installation
+# 📦 Installation
 
 Clone the repository:
 
@@ -68,127 +80,200 @@ npm install
 
 ---
 
-## Run the Dashboard
+# ▶️ Running the Dashboard
 
-### Method 1
+## Option 1
 
 ```bash
 npm start
 ```
 
-### Method 2
+## Option 2
 
 ```bash
 node server.js
 ```
 
-### Method 3 (Windows)
+## Option 3 (Windows)
 
-Double-click:
+Simply run:
 
+```text
+start.bat
 ```
-start_document.bat
-```
 
-This will:
-
-1. Start the Node.js server.
-2. Open the dashboard in your default browser.
+This launches the backend server and opens the dashboard automatically in your default browser.
 
 ---
 
-## Open the Dashboard
+# 🌐 Access the Dashboard
 
-Visit:
+Open:
 
-```
+```text
 http://localhost:3001
 ```
 
 ---
 
-## Dashboard Metrics
+# 📐 Metrics Calculated
 
-### PCR
+## Put Call Ratio (PCR)
 
-```
+```text
 PCR = Total Put Open Interest / Total Call Open Interest
 ```
 
-### Change OI PCR
+---
 
-```
+## Change OI PCR
+
+```text
 Change OI PCR = Total Put Change in OI / Total Call Change in OI
 ```
 
-### VWAP
+---
+
+## VWAP
 
 Calculated using traded option premiums and traded volumes:
 
-```
+```text
 VWAP = Σ(Price × Volume) / Σ(Volume)
 ```
 
 ---
 
-## Supported Indices
+# 📈 Interactive Charts
 
-* NIFTY
-* BANKNIFTY
-* FINNIFTY
-* MIDCPNIFTY
+The dashboard contains two live charts:
+
+## 1️⃣ PCR Trend
+
+* Displays PCR values for all four indices.
+* Each index is plotted with a unique color.
+* Fixed market timeline from **09:15 AM to 03:30 PM**.
+* Hover over any point to view the exact PCR value and timestamp.
+* Automatically restores previous intraday history after page refresh.
+
+## 2️⃣ Spot Price Trend
+
+* Displays underlying spot prices for all four indices.
+* Uses the same synchronized market timeline.
+* Hover tooltips show precise spot values.
+* Intraday history is preserved using `history.json`.
 
 ---
 
-## Data Refresh
+# 💾 Historical Persistence
 
-The backend fetches fresh NSE option chain data every **30 seconds**.
+Unlike conventional dashboards that reset after a browser refresh, this project maintains intraday history.
 
-The frontend automatically refreshes and updates:
+The backend stores minute-wise values in:
 
-* Dashboard cards
-* Summary table
-* Charts
+```text
+history.json
+```
+
+This enables:
+
+* Persistence across browser refreshes
+* Continuous intraday charts
+* Seamless restoration of PCR and Spot history
+* Automatic reset when a new trading day begins
 
 ---
 
-## Output
+# 📑 Excel Logging
 
-### Console
+Every refresh automatically updates:
 
-Displays a live summary table with:
+```text
+PCR_Live.xlsx
+```
 
-* Spot
+The workbook contains:
+
+* Dashboard summary sheet
+* Individual historical logs for:
+
+  * NIFTY
+  * BANKNIFTY
+  * FINNIFTY
+  * MIDCPNIFTY
+
+Each log includes:
+
+* Timestamp
+* Spot Price
 * PCR
 * Change OI PCR
 * VWAP
-* CE OI
-* PE OI
-
-### Browser
-
-Displays:
-
-* Live dashboard
-* Metric cards
-* Interactive charts
-* Auto-refreshing data
-
-### Excel
-
-`PCR_Live.xlsx` contains:
-
-* Dashboard sheet
-* Historical logs for each index
+* Call OI
+* Put OI
+* Call Change OI
+* Put Change OI
 
 ---
 
-## Dependencies
+# 🔄 Refresh Behaviour
 
-* `stock-nse-india`
-* `express`
-* `cors`
-* `exceljs`
+The backend fetches fresh option chain data every **30 seconds**.
+
+The frontend automatically updates:
+
+* Dashboard cards
+* Summary table
+* PCR chart
+* Spot chart
+* Value highlights for changed metrics
+
+Historical values remain intact throughout the trading session.
+
+---
+
+# 📂 API Endpoints
+
+## Live Dashboard Data
+
+```text
+GET /dashboard.json
+```
+
+Returns the latest computed metrics for all tracked indices.
+
+---
+
+## Historical Chart Data
+
+```text
+GET /history.json
+```
+
+Returns stored intraday PCR and Spot values used to restore charts after refresh.
+
+---
+
+# 📸 Dashboard Highlights
+
+* Real-time dashboard cards
+* Interactive summary table
+* Combined PCR visualization
+* Combined Spot Price visualization
+* Automatic flashing of updated values
+* Responsive layout with modern UI styling
+
+---
+
+# 📦 Dependencies
+
+```text
+stock-nse-india
+express
+cors
+exceljs
+chart.js
+```
 
 Install manually if required:
 
@@ -198,9 +283,9 @@ npm install stock-nse-india express cors exceljs
 
 ---
 
-## Troubleshooting
+# 🛠️ Troubleshooting
 
-### `npm start` → "Missing script: start"
+## `npm start` → Missing script
 
 Ensure `package.json` contains:
 
@@ -210,28 +295,49 @@ Ensure `package.json` contains:
 }
 ```
 
-### `node: command not found`
+---
 
-Install Node.js and verify:
+## `Cannot GET /history.json`
 
-```bash
-node -v
+* Verify the backend is running.
+* Ensure `server.js` exposes:
+
+```javascript
+app.get("/history.json", (req, res) => {
+    res.json(history);
+});
 ```
 
-### Dashboard is blank
-
-Check:
-
-* `http://localhost:3001/dashboard.json`
-* Ensure `server.js` is running.
-* Verify `public/index.html` is served correctly.
-
-### Port already in use
-
-Change the port in `server.js` or terminate the process using the existing port.
+* Restart the Node server after making changes.
 
 ---
 
-## Disclaimer
+## `EADDRINUSE: address already in use`
 
-This project is intended for educational and analytical purposes only. Data is sourced from NSE through the `stock-nse-india` library. Verify all market information independently before making trading or investment decisions.
+Another process is already using the configured port.
+
+Terminate it using:
+
+```bash
+netstat -ano | findstr :3001
+taskkill /PID <PID> /F
+```
+
+or change the server port.
+
+---
+
+## Dashboard appears blank
+
+Verify:
+
+* `http://localhost:3001/dashboard.json`
+* `http://localhost:3001/history.json`
+* `server.js` is running successfully
+* `public/index.html` is being served correctly
+
+---
+
+# ⚠️ Disclaimer
+
+This project is intended solely for educational, analytical, and research purposes. Market data is sourced using the `stock-nse-india` library. Users should independently verify all information before making any trading or investment decisions.
