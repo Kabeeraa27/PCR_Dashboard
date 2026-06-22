@@ -342,10 +342,19 @@ const pcrChart = new Chart(document.getElementById("pcrChart"), {
                     font: {
                         family: "JetBrains Mono"
                     },
-                    callback(value, index) {
-                        return index % 30 === 0
-                            ? this.getLabelForValue(value)
-                            : "";
+                callback: function(value, index) {
+
+                    // Show every 30 minutes
+                    if (index % 30 === 0) {
+                        return this.getLabelForValue(value);
+                    }
+
+                    // Always show the last timestamp (15:30)
+                    if (index === labels.length - 1) {
+                        return this.getLabelForValue(value);
+                    }
+
+                    return "";
                     }
                 }
             },
@@ -449,10 +458,19 @@ const spotChart = new Chart(document.getElementById("spotChart"), {
                     font: {
                         family: "JetBrains Mono"
                     },
-                    callback(value, index) {
-                        return index % 30 === 0
-                            ? this.getLabelForValue(value)
-                            : "";
+                   callback: function(value, index) {
+
+                    // Show every 30 minutes
+                    if (index % 30 === 0) {
+                        return this.getLabelForValue(value);
+                    }
+
+                    // Always show the last timestamp (15:30)
+                    if (index === labels.length - 1) {
+                        return this.getLabelForValue(value);
+                    }
+
+                    return "";
                     }
                 }
             },
