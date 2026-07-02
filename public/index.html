@@ -208,6 +208,39 @@ td:first-child {
     text-decoration: line-through;
 }
 
+.heatmap-controls{
+    margin:20px 0;
+    text-align:center;
+}
+
+#heatmapIndex{
+    padding:10px 16px;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+}
+
+#heatmap{
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fill,minmax(130px,1fr));
+    gap:10px;
+    margin-top:20px;
+}
+
+.heat-box{
+    border-radius:10px;
+    padding:15px;
+    text-align:center;
+    color:white;
+    font-weight:bold;
+    transition:0.2s;
+}
+
+.heat-box:hover{
+    transform:scale(1.04);
+}
+
 </style>
 </head>
 
@@ -240,7 +273,81 @@ td:first-child {
     <canvas id="spotChart"></canvas>
 </div>
 
+
+<div class="heatmap-controls">
+    <label for="heatmapIndex"><b>Heatmap Index:</b></label>
+
+    <select id="heatmapIndex">
+        <option value="NIFTY">NIFTY 50</option>
+        <option value="BANKNIFTY">BANKNIFTY</option>
+        <option value="FINNIFTY">FINNIFTY</option>
+        <option value="MIDCPNIFTY">MIDCPNIFTY</option>
+    </select>
+</div>
+
+<div id="heatmap"></div>
+
 <script>
+
+
+function getHeatColor(p) {
+
+    if (p >= 2) return "#006400";
+    if (p >= 1) return "#16a34a";
+    if (p >= 0.25) return "#4ade80";
+
+    if (p <= -2) return "#8b0000";
+    if (p <= -1) return "#dc2626";
+    if (p <= -0.25) return "#f87171";
+
+    return "#9ca3af";
+}
+
+async function loadHeatmap() {
+    try {
+        const index = document.getElementById("heatmapIndex").value;
+
+        const res = await fetch(`/heatmap.json?index=${index}`);
+        const stocks = await res.json();
+
+        console.log("Heatmap response:", stocks);
+
+        const root = document.getElementById("heatmap");
+        root.innerHTML = "";
+
+        if (!Array.isArray(stocks)) {
+            root.innerHTML = "<h3>Invalid heatmap response</h3>";
+            return;
+        }
+
+        stocks.forEach(s => {
+            root.innerHTML += `
+                <div class="heat-box" style="background:${getHeatColor(s.pChange)}">
+                    <div>${s.symbol}</div>
+                    <div>₹${Number(s.lastPrice).toLocaleString()}</div>
+                    <div>${s.pChange > 0 ? "+" : ""}${s.pChange.toFixed(2)}%</div>
+                </div>
+            `;
+        });
+
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+
+
+document
+.getElementById("heatmapIndex")
+.addEventListener(
+    "change",
+    loadHeatmap
+);
+
+loadHeatmap();
+
+setInterval(loadHeatmap,30000);
+
 
 // Restore previous chart data if available
 const savedPCR = {};
@@ -576,7 +683,6 @@ y: {
 
 });
 
-
 function toggleDataset(chart, index, button) {
     const visible = chart.isDatasetVisible(index);
 
@@ -762,7 +868,6 @@ async function load() {
     pcr: r.PCR,
     change: r.Change_OI_PCR,
     vwap: r.VWAP
-
     
 };
 

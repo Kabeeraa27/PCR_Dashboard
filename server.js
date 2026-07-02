@@ -6,10 +6,10 @@ import cors from "cors";
 
 const app = express();
 
+
 app.use(cors());
 app.use(express.static("public"));
 
-let latestResults = [];
 
 const nse = new NseIndia();
 
@@ -21,6 +21,14 @@ const INDICES = [
   "FINNIFTY",
   "MIDCPNIFTY"
 ];
+
+
+const INDEX_MAP = JSON.parse(
+    fs.readFileSync("indices.json", "utf8")
+);
+
+console.log("INDEX_MAP loaded:");
+console.log(INDEX_MAP);
 
 
 const HISTORY_FILE = "history.json";
@@ -133,6 +141,52 @@ async function getMetrics(symbol) {
         : totalPV / totalVol
 
   };
+}
+
+
+async function updateHeatmapCache() {
+
+    await Promise.all(
+
+        Object.keys(INDEX_MAP).map(async (index) => {
+
+            const symbols = INDEX_MAP[index];
+
+            const data = await Promise.all(
+
+                symbols.map(async (symbol) => {
+
+                    try {
+
+                        const d = await nse.getEquityDetails(symbol);
+
+                        return {
+                            symbol,
+                            lastPrice: d.priceInfo.lastPrice,
+                            pChange: d.priceInfo.pChange,
+                            change: d.priceInfo.change
+                        };
+
+                    } catch(err){
+
+    console.log(`${symbol}: ${err.message}`);
+
+    return null;
+
+
+
+                    }
+
+                })
+
+            );
+
+            heatmapCache[index] = data.filter(Boolean);
+
+        })
+
+    );
+
 }
 
 // ===============================
@@ -439,9 +493,19 @@ fs.writeFileSync(
 // ===============================
 // Run every 30 sec
 // ===============================
+let latestResults = [];
+
+let heatmapCache = {
+    NIFTY: [],
+    BANKNIFTY: [],
+    FINNIFTY: [],
+    MIDCPNIFTY: []
+};
+
 
 const PORT = 3001;
 
+// Existing endpoints
 app.get("/dashboard.json", (req, res) => {
     res.json(latestResults);
 });
@@ -450,12 +514,31 @@ app.get("/history.json", (req, res) => {
     res.json(history);
 });
 
+// ✅ ADD THE HEATMAP ENDPOINT HERE
+
+app.get("/heatmap.json", (req, res) => {
+
+    const index = req.query.index || "NIFTY";
+
+    res.json(
+        heatmapCache[index] || []
+    );
+
+});
+
+async function refreshAll() {
+
+    await Promise.all([
+        dashboard(),
+        updateHeatmapCache()
+    ]);
+
+}
+
+await refreshAll();
+
 app.listen(PORT, () => {
     console.log(`Dashboard available at http://localhost:${PORT}`);
 });
 
-// Initial fetch
-dashboard();
-
-// Refresh every 30 seconds
-setInterval(dashboard, 30000);
+setInterval(refreshAll, 30000);
